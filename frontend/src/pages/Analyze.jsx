@@ -10,72 +10,277 @@ export default function Analyze() {
   const [jobDescription, setJobDescription] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [step, setStep] = useState('')
+  const [currentStep, setCurrentStep] = useState('')
 
-  const steps = ['Parsing resume...', 'Computing ATS score...', 'Detecting skill gaps...', 'Generating suggestions...', 'Finalizing results...']
-
-  const inp = { width: '100%', padding: '12px 16px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }
+  const steps = [
+    'Parsing resume structure...',
+    'Computing ATS score...',
+    'Detecting skill gaps...',
+    'Generating suggestions...',
+    'Matching job roles...',
+    'Finalizing results...'
+  ]
 
   const handleAnalyze = async () => {
     if (!targetRole) return setError('Please enter a target role')
     if (!resumeText) return setError('Please paste your resume text')
     if (!jobDescription) return setError('Please paste the job description')
-    setError(''); setLoading(true)
-    let si = 0; setStep(steps[0])
-    const iv = setInterval(() => { si++; if (si < steps.length) setStep(steps[si]) }, 3000)
+
+    setError('')
+    setLoading(true)
+
+    let i = 0
+    setCurrentStep(steps[0])
+    const interval = setInterval(() => {
+      i++
+      if (i < steps.length) setCurrentStep(steps[i])
+    }, 3000)
+
     try {
-      const res = await api.post('/analyze', { targetRole, company, resumeText, jobDescription })
-      clearInterval(iv)
-      navigate('/results', { state: { results: res.data.results, targetRole, company } })
+      const res = await api.post('/analyze', {
+        targetRole, company, resumeText, jobDescription
+      })
+      clearInterval(interval)
+      navigate('/results', {
+        state: { results: res.data.results, targetRole, company }
+      })
     } catch (err) {
-      clearInterval(iv)
-      setError(err.response?.data?.error || 'Analysis failed. Make sure Python AI service is running.')
-    } finally { setLoading(false); setStep('') }
+      clearInterval(interval)
+      setError(err.response?.data?.error || 'Analysis failed. Make sure all 3 services are running.')
+    } finally {
+      setLoading(false)
+      setCurrentStep('')
+    }
+  }
+
+  const inputStyle = {
+    width: '100%',
+    padding: '14px 16px',
+    background: 'rgba(255,255,255,0.05)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: '10px',
+    fontSize: '14px',
+    color: '#ffffff',
+    outline: 'none',
+    boxSizing: 'border-box',
+    fontFamily: 'inherit',
+    transition: 'border-color 0.2s'
+  }
+
+  const labelStyle = {
+    display: 'block',
+    marginBottom: '8px',
+    fontSize: '11px',
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.4)',
+    textTransform: 'uppercase',
+    letterSpacing: '1px'
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0f0f1a' }}>
-      <div style={{ background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '0 32px', display: 'flex', alignItems: 'center', gap: '16px', height: '64px' }}>
-        <button onClick={() => navigate('/dashboard')} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', fontSize: '20px', cursor: 'pointer' }}>←</button>
-        <span style={{ fontSize: '20px', fontWeight: '800', background: 'linear-gradient(135deg, #6c63ff, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>⚡ HireIQ — Analyze Resume</span>
+    <div style={{ minHeight: '100vh', background: '#0f0f1a', color: '#fff' }}>
+
+      {/* TOPBAR */}
+      <div style={{
+        background: 'rgba(255,255,255,0.03)',
+        borderBottom: '1px solid rgba(255,255,255,0.08)',
+        padding: '0 32px', height: '64px',
+        display: 'flex', alignItems: 'center', gap: '16px'
+      }}>
+        <button
+          onClick={() => navigate('/dashboard')}
+          style={{
+            background: 'none', border: 'none',
+            color: 'rgba(255,255,255,0.5)', fontSize: '20px',
+            cursor: 'pointer', display: 'flex', alignItems: 'center'
+          }}
+        >
+          ←
+        </button>
+        <span style={{
+          fontSize: '20px', fontWeight: '800',
+          background: 'linear-gradient(135deg, #6c63ff, #a78bfa)',
+          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'
+        }}>
+          ⚡ HireIQ — Analyze Resume
+        </span>
       </div>
 
-      <div style={{ maxWidth: '760px', margin: '0 auto', padding: '40px 24px' }}>
-        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '32px' }}>
-          <h2 style={{ fontSize: '22px', fontWeight: '700', marginBottom: '6px' }}>Analyze Your Resume with AI</h2>
-          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '14px', marginBottom: '28px' }}>Get ATS score, skill gaps, and improvement suggestions</p>
+      <div style={{ maxWidth: '700px', margin: '0 auto', padding: '48px 24px' }}>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-            {[['Target Role *', targetRole, setTargetRole, 'e.g. Software Engineer'], ['Company (optional)', company, setCompany, 'e.g. Google']].map(([label, val, setter, ph]) => (
-              <div key={label}>
-                <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', fontWeight: '600', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</label>
-                <input style={inp} value={val} onChange={e => setter(e.target.value)} placeholder={ph} />
-              </div>
-            ))}
+        {/* HEADER */}
+        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: '8px',
+            background: 'rgba(108,99,255,0.15)',
+            border: '1px solid rgba(108,99,255,0.3)',
+            borderRadius: '99px', padding: '6px 16px',
+            fontSize: '12px', fontWeight: '600',
+            color: '#a78bfa', marginBottom: '16px'
+          }}>
+            ✨ AI Powered Analysis
+          </div>
+          <h1 style={{
+            fontSize: '32px', fontWeight: '800', color: '#ffffff',
+            marginBottom: '10px', lineHeight: 1.2
+          }}>
+            Analyze Your Resume
+          </h1>
+          <p style={{
+            fontSize: '15px', color: 'rgba(255,255,255,0.4)',
+            lineHeight: 1.6, maxWidth: '440px', margin: '0 auto'
+          }}>
+            Get your ATS score, detect skill gaps, and receive personalized AI suggestions
+          </p>
+        </div>
+
+        {/* FORM CARD */}
+        <div style={{
+          background: 'rgba(255,255,255,0.03)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: '20px', padding: '36px'
+        }}>
+
+          {/* Role and Company */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+            <div>
+              <label style={labelStyle}>Target Role *</label>
+              <input
+                type="text"
+                value={targetRole}
+                onChange={e => setTargetRole(e.target.value)}
+                placeholder="e.g. Software Engineer"
+                style={inputStyle}
+                onFocus={e => e.target.style.borderColor = 'rgba(108,99,255,0.6)'}
+                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Company (optional)</label>
+              <input
+                type="text"
+                value={company}
+                onChange={e => setCompany(e.target.value)}
+                placeholder="e.g. Google"
+                style={inputStyle}
+                onFocus={e => e.target.style.borderColor = 'rgba(108,99,255,0.6)'}
+                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+              />
+            </div>
           </div>
 
-          {[['Resume Text *', resumeText, setResumeText, 'Paste your complete resume here — name, experience, skills, education, projects...'], ['Job Description *', jobDescription, setJobDescription, 'Paste the full job description here...']].map(([label, val, setter, ph]) => (
-            <div key={label} style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', fontWeight: '600', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</label>
-              <textarea style={{ ...inp, minHeight: '140px', resize: 'vertical', fontFamily: 'inherit' }} value={val} onChange={e => setter(e.target.value)} placeholder={ph} />
+          {/* Resume Text */}
+          <div style={{ marginBottom: '24px' }}>
+            <label style={labelStyle}>Resume Text *</label>
+            <textarea
+              value={resumeText}
+              onChange={e => setResumeText(e.target.value)}
+              placeholder="Paste your complete resume here — name, experience, skills, education, projects..."
+              style={{ ...inputStyle, minHeight: '160px', resize: 'vertical' }}
+              onFocus={e => e.target.style.borderColor = 'rgba(108,99,255,0.6)'}
+              onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+            />
+          </div>
+
+          {/* Job Description */}
+          <div style={{ marginBottom: '28px' }}>
+            <label style={labelStyle}>Job Description *</label>
+            <textarea
+              value={jobDescription}
+              onChange={e => setJobDescription(e.target.value)}
+              placeholder="Paste the full job description here..."
+              style={{ ...inputStyle, minHeight: '160px', resize: 'vertical' }}
+              onFocus={e => e.target.style.borderColor = 'rgba(108,99,255,0.6)'}
+              onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+            />
+          </div>
+
+          {/* Error */}
+          {error && (
+            <div style={{
+              background: 'rgba(255,107,107,0.1)',
+              border: '1px solid rgba(255,107,107,0.2)',
+              borderRadius: '10px', padding: '12px 16px',
+              marginBottom: '20px', color: '#ff6b6b', fontSize: '13px'
+            }}>
+              ⚠️ {error}
             </div>
-          ))}
+          )}
 
-          {error && <div style={{ background: 'rgba(255,107,107,0.1)', border: '1px solid rgba(255,107,107,0.3)', borderRadius: '8px', padding: '12px', marginBottom: '16px', color: '#ff6b6b', fontSize: '13px' }}>{error}</div>}
-
+          {/* Loading */}
           {loading && (
-            <div style={{ textAlign: 'center', padding: '20px', marginBottom: '16px' }}>
-              <div style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.1)', borderTop: '3px solid #6c63ff', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
-              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '14px' }}>{step}</p>
+            <div style={{
+              textAlign: 'center', padding: '24px',
+              marginBottom: '20px',
+              background: 'rgba(108,99,255,0.08)',
+              border: '1px solid rgba(108,99,255,0.2)',
+              borderRadius: '12px'
+            }}>
+              <div style={{
+                width: '36px', height: '36px',
+                border: '3px solid rgba(108,99,255,0.2)',
+                borderTop: '3px solid #6c63ff',
+                borderRadius: '50%',
+                animation: 'spin 0.8s linear infinite',
+                margin: '0 auto 12px'
+              }} />
+              <p style={{ color: '#a78bfa', fontSize: '14px', fontWeight: '500' }}>
+                {currentStep}
+              </p>
+              <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', marginTop: '4px' }}>
+                This usually takes 10–20 seconds
+              </p>
               <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
             </div>
           )}
 
-          <button onClick={handleAnalyze} disabled={loading}
-            style={{ width: '100%', padding: '16px', background: loading ? 'rgba(255,255,255,0.05)' : 'linear-gradient(135deg, #6c63ff, #a78bfa)', color: 'white', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '700', cursor: loading ? 'not-allowed' : 'pointer' }}>
-            {loading ? 'Analyzing...' : '✨ Run AI Analysis'}
+          {/* Button */}
+          <button
+            onClick={handleAnalyze}
+            disabled={loading}
+            style={{
+              width: '100%', padding: '16px',
+              background: loading
+                ? 'rgba(255,255,255,0.06)'
+                : 'linear-gradient(135deg, #6c63ff, #a78bfa)',
+              color: loading ? 'rgba(255,255,255,0.3)' : 'white',
+              border: 'none', borderRadius: '12px',
+              fontSize: '16px', fontWeight: '700',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              letterSpacing: '0.3px', transition: 'all 0.2s'
+            }}
+          >
+            {loading ? 'Analyzing your resume...' : '✨ Run AI Analysis'}
           </button>
+
         </div>
+
+        {/* TIPS */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: '12px', marginTop: '24px'
+        }}>
+          {[
+            { icon: '🎯', title: 'ATS Score', desc: 'See how well your resume passes ATS filters' },
+            { icon: '🔍', title: 'Skill Gaps', desc: 'Find missing skills the job requires' },
+            { icon: '💡', title: 'Suggestions', desc: 'Get specific tips to improve your resume' },
+          ].map((t, i) => (
+            <div key={i} style={{
+              background: 'rgba(255,255,255,0.02)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              borderRadius: '12px', padding: '16px', textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '22px', marginBottom: '8px' }}>{t.icon}</div>
+              <div style={{ fontSize: '13px', fontWeight: '600', color: '#fff', marginBottom: '4px' }}>
+                {t.title}
+              </div>
+              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', lineHeight: 1.5 }}>
+                {t.desc}
+              </div>
+            </div>
+          ))}
+        </div>
+
       </div>
     </div>
   )

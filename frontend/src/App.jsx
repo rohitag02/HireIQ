@@ -4,6 +4,7 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Analyze from './pages/Analyze'
 import Results from './pages/Results'
+import Interview from './pages/Interview'
 
 function ProtectedRoute({ children }) {
   const { isLoggedIn, loading } = useAuth()
@@ -19,6 +20,7 @@ function AppRoutes() {
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/analyze" element={<ProtectedRoute><Analyze /></ProtectedRoute>} />
       <Route path="/results" element={<ProtectedRoute><Results /></ProtectedRoute>} />
+      <Route path="/interview" element={<ProtectedRoute><Interview /></ProtectedRoute>} />
     </Routes>
   )
 }
