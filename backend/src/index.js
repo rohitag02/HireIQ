@@ -56,5 +56,7 @@ async function start() {
 
 start().catch(err => {
   console.error('❌ Error:', err.message);
+  console.error('❌ Full error:', JSON.stringify(err, null, 2));
+  console.error('❌ Stack:', err.stack);
   process.exit(1);
 });
