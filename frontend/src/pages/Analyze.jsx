@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api'
+// Wake up AI service
+fetch('https://hireiq-ai.onrender.com/').catch(() => {});
 
 export default function Analyze() {
   const navigate = useNavigate()
